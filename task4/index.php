@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   if (empty($name)) {
     setcookie('name_error1', '1', time() + 24 * 60 * 60);
     $errors = TRUE;
-  } else if (!preg_match('/^[\p{Cyrillic}\p{L}\d\s.,()]+$/u', $name)) {
+  } else if (!preg_match('/^[a-zA-Zа-яА-ЯёЁ\s\-]+$/u', $name)) {
     setcookie('name_error2', '1', time() + 24 * 60 * 60);
     setcookie('name_value', $name, time() + 30 * 24 * 60 * 60);
     $errors = TRUE;
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   if (!is_numeric($year)) {
     setcookie('year_error1', '1', time() + 24 * 60 * 60);
     $errors = TRUE;
-  } else if ((2023 - $year) < 18) {
+  } else if ($year < 1924 || $year > 2010) {
     setcookie('year_error2', '1', time() + 24 * 60 * 60);
     setcookie('year_value', $year, time() + 30 * 24 * 60 * 60);
     $errors = TRUE;
@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   if (empty($biography)) {
     setcookie('biography_error1', '1', time() + 24 * 60 * 60);
     $errors = TRUE;
-  } else if (!preg_match('/^[\p{Cyrillic}\p{L}\d\s.,()]+$/u', $biography)) {
+  } else if (!preg_match('/^[a-zA-Zа-яА-ЯёЁ0-9.,;!? \-]+$/u', $biography)) {
     setcookie('biography_error2', '1', time() + 24 * 60 * 60);
     setcookie('biography_value', $biography, time() + 30 * 24 * 60 * 60);
     $errors = TRUE;
