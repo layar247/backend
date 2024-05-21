@@ -33,17 +33,17 @@
     <div class="form-content">
       <div class="form-item">
         <p <?php if ($errors['name1'] || $errors['name2']) {print 'class="error"';} ?>>Имя</p>
-        <input class="line" name="name" value="<?php echo $values['name']; ?>" />
+        <input class="line" name="name" value="<?php echo htmlspecialchars($values['name']); ?>" />
         <?php if ($errors['name1']) {print $messages['name1'];} else if ($errors['name2']) {print $messages['name2'];}?>
       </div>
       <div class="form-item">
         <p <?php if ($errors['phone1'] || $errors['phone2']) {print 'class="error"';} ?>>Телефон</p>
-        <input class="line" name="phone" value="<?php print $values['phone']; ?>" />
+        <input class="line" name="phone" value="<?php print htmlspecialchars($values['phone']); ?>" />
         <?php if ($errors['phone1']) {print $messages['phone1'];} else if ($errors['phone2']) {print $messages['phone2'];}?>
       </div>
       <div class="form-item">
         <p <?php if ($errors['email1'] || $errors['email2']) {print 'class="error"';} ?>>Email</p>
-        <input class="line" name="email" value="<?php print $values['email']; ?>" />
+        <input class="line" name="email" value="<?php print htmlspecialchars($values['email']); ?>" />
         <?php if ($errors['email1']) {print $messages['email1'];} else if ($errors['email2']) {print $messages['email2'];}?>
       </div>
       <div class="form-item">
@@ -131,7 +131,7 @@
         <p class="big-text <?php if ($errors['biography1'] || $errors['biography2']) {print 'error';} ?>">Расскажи о себе:</p>
         <p class="small-text">(макс. 128 символов, кириллица)</p>
         <?php if ($errors['biography1']) {print $messages['biography1'];} else if ($errors['biography2']) {print $messages['biography2'];}?>
-        <textarea name="biography" cols=24 rows=4 maxlength=128 spellcheck="false"><?php if (!empty($values['biography'])) {print $values['biography'];} ?></textarea>
+        <textarea name="biography" cols=24 rows=4 maxlength=128 spellcheck="false"><?php if (!empty($values['biography'])) {print htmlspecialchars($values['biography']);} ?></textarea>
       </div>
     </div>  
     <div class="send">
@@ -142,6 +142,7 @@
       </div>
       <input class="btn" type="submit" name="submit" value="Отправить" />
     </div>
+    <?php if (!empty($_SESSION['login'])) {echo '<input type="hidden" name="token" value="' . $_SESSION["token"] . '">'; } ?>
   </form>
   </div>
 </body> 
