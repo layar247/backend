@@ -93,56 +93,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   }
 
   $values = array();
-  $values['name'] = empty($_COOKIE['name_value']) ? '' : $_COOKIE['name_value'];
-  $values['phone'] = empty($_COOKIE['phone_value']) ? '' : $_COOKIE['phone_value'];
-  $values['email'] = empty($_COOKIE['email_value']) ? '' : $_COOKIE['email_value'];
-  $values['year'] = empty($_COOKIE['year_value']) ? '' : $_COOKIE['year_value'];
-  $values['gender'] = empty($_COOKIE['gender_value']) ? '' : $_COOKIE['gender_value'];
-  $values['languages'] = empty($_COOKIE['languages_value']) ? '' : $_COOKIE['languages_value'];
-  $values['biography'] = empty($_COOKIE['biography_value']) ? '' : $_COOKIE['biography_value'];
-  $values['checkboxContract'] = empty($_COOKIE['checkboxContract_value']) ? '' : $_COOKIE['checkboxContract_value'];
+  $values['name'] = empty($_COOKIE['name_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['name_value']));
+  $values['phone'] = empty($_COOKIE['phone_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['phone_value']));
+  $values['email'] = empty($_COOKIE['email_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['email_value']));
+  $values['year'] = empty($_COOKIE['year_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['year_value']));
+  $values['gender'] = empty($_COOKIE['gender_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['gender_value']));
+  $values['languages'] = empty($_COOKIE['languages_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['languages_value']));
+  $values['biography'] = empty($_COOKIE['biography_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['biography_value']));
+  $values['checkboxContract'] = empty($_COOKIE['checkboxContract_value']) ? '' : htmlspecialchars(strip_tags($_COOKIE['checkboxContract_value']));
 
   if (count(array_filter($errors)) === 0 && !empty($_COOKIE[session_name()]) && session_start() && !empty($_SESSION['login'])) {
+    $is_login_exists = false;
+    $stmt = $db->prepare('SELECT user_id FROM users WHERE (login = ?)');
     $login = $_SESSION['login'];
-    try {
-      $stmt = $db->prepare("SELECT application_id FROM users WHERE login = ?");
-      $stmt->execute([$login]);
-      $app_id = $stmt->fetchColumn();
-
-      $stmt = $db->prepare("SELECT name, phone, email, year, gender, biography FROM application WHERE application_id = ?");
-      $stmt->execute([$app_id]);
-      $dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-      $stmt = $db->prepare("SELECT language_id FROM languages WHERE application_id = ?");
-      $stmt->execute([$app_id]);
-      $languages = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
-
-      if (!empty($dates[0]['name'])) {
-        $values['name'] = $dates[0]['name'];
+    $_SESSION['token'] = bin2hex(random_bytes(32));
+    $stmt->execute([$login]);
+    if ($stmt->rowCount() > 0) {
+      try {
+        $stmt = $db->prepare("SELECT application_id FROM users WHERE login = ?");
+        $stmt->execute([$login]);
+        $app_id = $stmt->fetchColumn();
+  
+        $stmt = $db->prepare("SELECT name, phone, email, year, gender, biography FROM application WHERE application_id = ?");
+        $stmt->execute([$app_id]);
+        $dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  
+        $stmt = $db->prepare("SELECT language_id FROM languages WHERE application_id = ?");
+        $stmt->execute([$app_id]);
+        $languages = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+  
+        if (!empty($dates[0]['name'])) {
+          $values['name'] = htmlspecialchars(strip_tags($dates[0]['name']));
+        }
+        if (!empty($dates[0]['name'])) {
+          $values['phone'] = htmlspecialchars(strip_tags($dates[0]['phone']));
+        }
+        if (!empty($dates[0]['email'])) {
+          $values['email'] = htmlspecialchars(strip_tags($dates[0]['email']));
+        }
+        if (!empty($dates[0]['year'])) {
+          $values['year'] = htmlspecialchars(strip_tags($dates[0]['year']));
+        }
+        if (!empty($dates[0]['gender'])) {
+          $values['gender'] = htmlspecialchars(strip_tags($dates[0]['gender']));
+        }
+        if (!empty($languages)) {
+          $values['languages'] = serialize($languages);
+        }
+        if (!empty($dates[0]['biography'])) {
+          $values['biography'] = htmlspecialchars(strip_tags($dates[0]['biography']));
+        }
+      } catch (PDOException $e) {
+          print('Error : ' . $e->getMessage());
+          exit();
       }
-      if (!empty($dates[0]['name'])) {
-        $values['phone'] = $dates[0]['phone'];
-      }
-      if (!empty($dates[0]['email'])) {
-        $values['email'] = $dates[0]['email'];
-      }
-      if (!empty($dates[0]['year'])) {
-        $values['year'] = $dates[0]['year'];
-      }
-      if (!empty($dates[0]['gender'])) {
-        $values['gender'] = $dates[0]['gender'];
-      }
-      if (!empty($languages)) {
-        $values['languages'] = serialize($languages);
-      }
-      if (!empty($dates[0]['biography'])) {
-        $values['biography'] = $dates[0]['biography'];
-      }
-    } catch (PDOException $e) {
-        print('Error : ' . $e->getMessage());
-        exit();
+      printf('<div id="header"><p>Вход с логином %s; uid: %d</p><a href=logout.php>Выйти</a></div>', $_SESSION['login'], $_SESSION['uid']);
     }
-    printf('<div id="header"><p>Вход с логином %s; uid: %d</p><a href=logout.php>Выйти</a></div>', $_SESSION['login'], $_SESSION['uid']);
   }
   include('form.php');
 } else {
@@ -271,33 +277,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   }
 
   if (!empty($_COOKIE[session_name()]) && session_start() && !empty($_SESSION['login'])) {
-    $login = $_SESSION['login'];
-    try {
-      $stmt = $db->prepare("SELECT application_id FROM users WHERE login = ?");
-      $stmt->execute([$login]);
-      $app_id = $stmt->fetchColumn();
+    if (!empty($_POST['token']) && hash_equals($_POST['token'], $_SESSION['token'])) {
+      $login = $_SESSION['login'];
+      try {
+        $stmt = $db->prepare("SELECT application_id FROM users WHERE login = ?");
+        $stmt->execute([$login]);
+        $app_id = $stmt->fetchColumn();
+        setcookie('login', $login, time() + 30 * 24 * 60 * 60);
 
-      $stmt = $db->prepare("UPDATE application SET name = ?, phone = ?, email = ?, year = ?, gender = ?, biography = ?
-        WHERE application_id = ?");
-      $stmt->execute([$name, $phone, $email, $year, $gender, $biography, $app_id]);
+        $stmt = $db->prepare("UPDATE application SET name = ?, phone = ?, email = ?, year = ?, gender = ?, biography = ?
+          WHERE application_id = ?");
+        $stmt->execute([$name, $phone, $email, $year, $gender, $biography, $app_id]);
 
-      $stmt = $db->prepare("SELECT language_id FROM languages WHERE application_id = ?");
-      $stmt->execute([$app_id]);
-      $langs = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
-
-      if (array_diff($langs, $languages) || count($langs) != count($languages)) {
-        $stmt = $db->prepare("DELETE FROM languages WHERE application_id = ?");
+        $stmt = $db->prepare("SELECT language_id FROM languages WHERE application_id = ?");
         $stmt->execute([$app_id]);
+        $langs = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
 
-        $stmt = $db->prepare("INSERT INTO languages (application_id, language_id) VALUES (?, ?)");
-        foreach ($languages as $language_id) {
-          $stmt->execute([$app_id, $language_id]);
+        if (array_diff($langs, $languages) || count($langs) != count($languages)) {
+          $stmt = $db->prepare("DELETE FROM languages WHERE application_id = ?");
+          $stmt->execute([$app_id]);
+
+          $stmt = $db->prepare("INSERT INTO languages (application_id, language_id) VALUES (?, ?)");
+          foreach ($languages as $language_id) {
+            $stmt->execute([$app_id, $language_id]);
+          }
         }
+      } catch (PDOException $e) {
+          print('Error : ' . $e->getMessage());
+          exit();
       }
-
-    } catch (PDOException $e) {
-        print('Error : ' . $e->getMessage());
-        exit();
+    } else {
+      die('Ошибка CSRF: недопустимый токен');
     }
   }
   else {
